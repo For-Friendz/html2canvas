@@ -265,29 +265,47 @@ export class CanvasRenderer extends Renderer {
         });
     }
 
+    // https://github.com/niklasvh/html2canvas/issues/1064#issuecomment-732241897 fix for object-fit: cover
     renderReplacedElement(
         container: ReplacedElementContainer,
         curves: BoundCurves,
         image: HTMLImageElement | HTMLCanvasElement
     ): void {
         if (image && container.intrinsicWidth > 0 && container.intrinsicHeight > 0) {
-            const box = contentBox(container);
-            const path = calculatePaddingBoxPath(curves);
-            this.path(path);
-            this.ctx.save();
-            this.ctx.clip();
+            var box = contentBox(container)
+            var path = calculatePaddingBoxPath(curves)
+
+            this.path(path)
+            this.ctx.save()
+            this.ctx.clip()
+
+            let newWidth
+            let newHeight
+            let newX = box.left
+            let newY = box.top
+
+            if (container.intrinsicWidth / box.width < container.intrinsicHeight / box.height) {
+                newWidth = box.width
+                newHeight = container.intrinsicHeight * (box.width / container.intrinsicWidth)
+                newY = box.top + (box.height - newHeight) / 2
+            } else {
+                newWidth = container.intrinsicWidth * (box.height / container.intrinsicHeight)
+                newHeight = box.height
+                newX = box.left + (box.width - newWidth) / 2
+            }
+
             this.ctx.drawImage(
                 image,
                 0,
                 0,
                 container.intrinsicWidth,
                 container.intrinsicHeight,
-                box.left,
-                box.top,
-                box.width,
-                box.height
-            );
-            this.ctx.restore();
+                newX,
+                newY,
+                newWidth,
+                newHeight
+            )
+            this.ctx.restore()
         }
     }
 
